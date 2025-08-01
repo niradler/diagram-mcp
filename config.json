@@ -1,11 +1,15 @@
 {
     "mcpServers": {
         "diagram-mcp-stdio": {
-            "command": "node",
+            "command": "npx",
             "args": [
-                "dist/index.js"
+                "-y",
+                "diagram-mcp"
             ],
-            "env": {}
+            "env": {
+                "PORT": "8099",
+                "TRANSPORT_TYPE": "stdio"
+            }
         },
         "diagram-mcp": {
             "command": "npx",

@@ -22,10 +22,7 @@ pnpm install
 ### Docker Installation
 
 ```bash
-# Build and run with Docker Compose (recommended)
-docker-compose up -d
-
-# Or build and run manually
+# Build and run with Docker
 docker build -t diagram-mcp .
 docker run -p 3000:3000 diagram-mcp
 ```
@@ -48,7 +45,6 @@ pnpm run test:coverage
 # Docker commands
 pnpm run docker:build    # Build Docker image
 pnpm run docker:run      # Run Docker container
-pnpm run docker:compose  # Start with Docker Compose
 ```
 
 ## Usage
