@@ -16,7 +16,9 @@
     "test:mcp": "node test-mcp-client.js",
     "clean": "rm -rf dist",
     "rebuild": "npm run clean && npm run build",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build",
+    "docker:build": "docker build -t diagram-mcp .",
+    "docker:run": "docker run -p 3000:3000 diagram-mcp"
   },
   "keywords": [
     "mcp",
