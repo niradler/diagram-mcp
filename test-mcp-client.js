@@ -49,7 +49,7 @@ classDiagram
         +processPayment()
     }
     
-    User ||--o{ Order : places
+    User --> Order : places
 `,
         state: `
 stateDiagram-v2
@@ -133,24 +133,39 @@ flowchart
     }
 
     if (customCode) {
+        assert(customCode, 'Custom code must be provided if specified')
         return customCode
     }
 
-    return diagramTypes[type] || diagramTypes.flowchart
+    const code = diagramTypes[type] || diagramTypes.flowchart
+    assert(code, 'Mermaid code must be returned')
+    return code
 }
 
 // Reusable function to render diagram and save file
 async function renderAndSaveDiagram(client, mermaidCode, options = {}) {
+    assert(client, 'Client is required')
+    assert(mermaidCode, 'Mermaid code is required')
+    assert(mermaidCode.trim().length > 0, 'Mermaid code cannot be empty')
+    assert(options, 'Options object is required')
+
     const {
         format = 'png',
         theme = 'default',
         backgroundColor = '#ffffff',
         quality = 90,
         filePath = null,
-        testName = 'diagram'
+        testName = 'diagram',
+        output = 'link'
     } = options
 
-    console.log(`\n🎨 Testing ${testName} (${format.toUpperCase()})...`)
+    assert(['svg', 'png', 'jpg', 'pdf'].includes(format), `Invalid format: ${format}`)
+    assert(['default', 'base', 'dark', 'forest', 'neutral', 'null'].includes(theme), `Invalid theme: ${theme}`)
+    assert(['link', 'filepath', 'raw'].includes(output), `Invalid output: ${output}`)
+    assert(quality >= 1 && quality <= 100, `Quality must be between 1 and 100, got: ${quality}`)
+    assert(testName, 'Test name is required')
+
+    console.log(`\n🎨 Testing ${testName} (${format.toUpperCase()}) with output: ${output}...`)
     console.log('Mermaid code:')
     console.log(mermaidCode)
 
@@ -159,10 +174,12 @@ async function renderAndSaveDiagram(client, mermaidCode, options = {}) {
         format,
         theme,
         backgroundColor,
-        quality
+        quality,
+        output
     }
 
     if (filePath !== null) {
+        assert(filePath, 'File path must be provided if not null')
         toolArguments.filePath = filePath
     }
 
@@ -171,29 +188,55 @@ async function renderAndSaveDiagram(client, mermaidCode, options = {}) {
         arguments: toolArguments
     })
 
+    assert(renderResult, 'Render result must be returned')
+    assert(renderResult.content, 'Render result must have content')
+    assert(renderResult.content.length > 0, 'Render result content must not be empty')
+
     console.log(`✅ ${testName} result received!`)
 
     if (renderResult.content[0].text) {
         const resultData = JSON.parse(renderResult.content[0].text)
+        assert(resultData, 'Result data must be parsed')
+        assert(typeof resultData.success === 'boolean', 'Result must have success boolean property')
+
         if (resultData.success && resultData.data) {
-            const fileName = filePath || `test-diagram-${testName}.${format}`
-            const outputPath = join(process.cwd(), fileName)
+            assert(resultData.data, 'Successful result must have data')
+            assert(resultData.format, 'Result must have format')
+            assert(resultData.output_type, 'Result must have output_type')
 
-            if (format === 'svg') {
-                console.log(`💾 Saving ${testName} to:`, outputPath)
-                writeFileSync(outputPath, resultData.data)
-            } else {
-                const imageBuffer = Buffer.from(resultData.data, 'base64')
-                console.log(`💾 Saving ${testName} to:`, outputPath)
-                writeFileSync(outputPath, imageBuffer)
+            if (output === 'filepath') {
+                assert(resultData.output_type === 'filepath', 'Output type should be filepath')
+                assert(resultData.data, 'Filepath output must have data (file path)')
+                console.log(`💾 File saved to: ${resultData.data}`)
+                return { success: true, path: resultData.data }
+            } else if (output === 'link') {
+                assert(resultData.output_type === 'link', 'Output type should be link')
+                assert(resultData.data, 'Link output must have data (URL)')
+                assert(resultData.data.startsWith('http://localhost:'), 'Link must be localhost URL')
+                console.log(`🔗 Link generated: ${resultData.data}`)
+                return { success: true, url: resultData.data }
+            } else if (output === 'raw') {
+                assert(resultData.output_type === 'raw', 'Output type should be raw')
+                assert(resultData.data, 'Raw output must have data')
+
+                if (format === 'svg') {
+                    assert(resultData.data.startsWith('<svg'), 'SVG data must start with <svg')
+                } else {
+                    // For binary formats, data should be base64
+                    assert(resultData.data.length > 0, 'Base64 data must not be empty')
+                }
+
+                console.log(`📄 Raw data received (${resultData.data.length} chars)`)
+                return { success: true, data: resultData.data }
             }
-
-            console.log(`✅ ${testName} saved successfully!`)
-            return { success: true, path: outputPath }
+        } else if (!resultData.success) {
+            assert(resultData.error, 'Failed result must have error message')
+            console.log(`❌ ${testName} failed:`, resultData.error)
+            return { success: false, error: resultData.error }
         }
     }
 
-    return { success: false }
+    return { success: false, error: 'No response data received' }
 }
 
 async function testMermaidMCP() {
@@ -216,111 +259,168 @@ async function testMermaidMCP() {
 
         console.log('🔧 Listing available tools...')
         const tools = await client.listTools()
+        assert(tools, 'Tools response must be returned')
+        assert(tools.tools, 'Tools must be returned')
+        assert(Array.isArray(tools.tools), 'Tools must be an array')
+        assert(tools.tools.length > 0, 'At least one tool must be available')
+
+        const renderTool = tools.tools.find(t => t.name === 'render_diagram')
+        assert(renderTool, 'render_diagram tool must be available')
+
         console.log('Available tools:', tools.tools.map(t => t.name))
         console.log()
 
-        // Test 1: Flowchart diagram
+        // Test 1: Flowchart diagram with link output
         const flowchartCode = getMermaidCode('flowchart')
         await renderAndSaveDiagram(client, flowchartCode, {
             format: 'png',
             theme: 'dark',
             backgroundColor: '#1a1a1a',
-            filePath: 'test-diagram-flowchart.png',
-            testName: 'flowchart'
+            testName: 'flowchart-link',
+            output: 'link'
         })
 
-        // Test 2: Sequence diagram
+        // Test 2: Sequence diagram with filepath output
         const sequenceCode = getMermaidCode('sequence')
         await renderAndSaveDiagram(client, sequenceCode, {
             format: 'jpg',
             theme: 'default',
             quality: 95,
             backgroundColor: '#ffffff',
-            testName: 'sequence'
+            testName: 'sequence-filepath',
+            output: 'filepath'
         })
 
-        // Test 3: Class diagram
+        // Test 3: Class diagram with raw output
         const classCode = getMermaidCode('class')
         await renderAndSaveDiagram(client, classCode, {
             format: 'svg',
             theme: 'forest',
-            testName: 'class'
+            testName: 'class-raw',
+            output: 'raw'
         })
 
-        // Test 4: State diagram
+        // Test 4: State diagram with link output
         const stateCode = getMermaidCode('state')
         await renderAndSaveDiagram(client, stateCode, {
             format: 'png',
             theme: 'default',
             backgroundColor: '#f8f9fa',
-            testName: 'state'
+            testName: 'state-link',
+            output: 'link'
         })
 
-        // Test 5: Entity Relationship diagram
+        // Test 5: Entity Relationship diagram with filepath output
         const erCode = getMermaidCode('er')
         await renderAndSaveDiagram(client, erCode, {
             format: 'jpg',
             theme: 'forest',
             quality: 90,
-            testName: 'er'
+            testName: 'er-filepath',
+            output: 'filepath'
         })
 
-        // Test 6: XY Chart
+        // Test 6: XY Chart with raw output
         const xyChartCode = getMermaidCode('xychart')
         await renderAndSaveDiagram(client, xyChartCode, {
             format: 'png',
             theme: 'dark',
             backgroundColor: '#2d3748',
-            testName: 'xychart'
+            testName: 'xychart-raw',
+            output: 'raw'
         })
 
-        // Test 7: Git Graph
+        // Test 7: Git Graph with link output
         const gitGraphCode = getMermaidCode('gitgraph')
         await renderAndSaveDiagram(client, gitGraphCode, {
             format: 'svg',
             theme: 'default',
-            testName: 'gitgraph'
+            testName: 'gitgraph-link',
+            output: 'link'
         })
 
-        // Test 8: User Journey
+        // Test 8: User Journey with filepath output
         const journeyCode = getMermaidCode('journey')
         await renderAndSaveDiagram(client, journeyCode, {
             format: 'jpg',
             theme: 'forest',
             quality: 85,
-            testName: 'journey'
+            testName: 'journey-filepath',
+            output: 'filepath'
         })
 
-        // Test 9: Pie Chart
+        // Test 9: Pie Chart with raw output
         const pieChartCode = getMermaidCode('piechart')
         await renderAndSaveDiagram(client, pieChartCode, {
             format: 'png',
             theme: 'dark',
             backgroundColor: '#ffffff',
-            testName: 'piechart'
+            testName: 'piechart-raw',
+            output: 'raw'
         })
 
-        // Test 10: Flowchart with config
+        // Test 10: Flowchart with config and link output
         const flowchartConfigCode = getMermaidCode('flowchartConfig')
         await renderAndSaveDiagram(client, flowchartConfigCode, {
             format: 'png',
             theme: 'default',
             backgroundColor: '#ffffff',
-            testName: 'flowchartConfig'
+            testName: 'flowchartConfig-link',
+            output: 'link'
         })
 
+        // Test 11: Invalid syntax (should fail gracefully)
+        console.log('\n🧪 Testing error handling with invalid syntax...')
+        const invalidCode = `
+INVALID_MERMAID_SYNTAX
+    A[Start] --> B{Is it working?}
+    B -->|Yes| C[Great!]
+    B -->|No| D[Debug]
+    D --> B
+    C --> E[End]
+    
+    style A fill:#e1f5fe
+    style C fill:#c8e6c9
+    style D fill:#ffcdd2
+    INVALID_SYNTAX_HERE
+    classDiagram
+        class User {
+            +String name
+        }
+        User --> INVALID_RELATIONSHIP_SYNTAX
+`
+        const errorResult = await renderAndSaveDiagram(client, invalidCode, {
+            format: 'svg',
+            theme: 'default',
+            testName: 'invalid-syntax',
+            output: 'raw'
+        })
+
+        assert(!errorResult.success, 'Invalid syntax should fail')
+        assert(errorResult.error, 'Error result should have error message')
+
+        console.log('✅ Error handling working correctly - invalid syntax detected')
+
+        // Test 12: Invalid output type (should fail gracefully)
+        console.log('\n🧪 Testing invalid output type...')
+        try {
+            await renderAndSaveDiagram(client, getMermaidCode('flowchart'), {
+                format: 'png',
+                theme: 'default',
+                testName: 'invalid-output',
+                output: 'invalid_output_type'
+            })
+            assert(false, 'Should have failed with invalid output type')
+        } catch (error) {
+            console.log('✅ Invalid output type properly rejected')
+        }
+
         console.log('\n🎉 All tests completed successfully!')
-        console.log('\n📁 Generated files:')
-        console.log('- test-diagram-flowchart.png (Flowchart - PNG)')
-        console.log('- test-diagram-sequence.jpg (Sequence diagram - JPG)')
-        console.log('- test-diagram-class.svg (Class diagram - SVG)')
-        console.log('- test-diagram-state.png (State diagram - PNG)')
-        console.log('- test-diagram-er.jpg (ER diagram - JPG)')
-        console.log('- test-diagram-xychart.png (XY Chart - PNG)')
-        console.log('- test-diagram-gitgraph.svg (Git Graph - SVG)')
-        console.log('- test-diagram-journey.jpg (User Journey - JPG)')
-        console.log('- test-diagram-piechart.png (Pie Chart - PNG)')
-        console.log('- test-diagram-flowchartConfig.png (Flowchart with Config - PNG)')
+        console.log('\n📁 Test Summary:')
+        console.log('- Link output: Returns localhost URLs for easy viewing')
+        console.log('- Filepath output: Saves files to disk and returns paths')
+        console.log('- Raw output: Returns base64 data for images or raw SVG strings')
+        console.log('- Error handling: Properly validates input and handles errors')
 
     } catch (error) {
         console.error('❌ Test failed:', error)

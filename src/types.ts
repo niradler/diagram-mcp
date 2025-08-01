@@ -1,5 +1,7 @@
 import { z } from 'zod'
 
+const OutputTypeEnum = z.enum(['link', 'filepath', 'raw'])
+
 export const RenderDiagramRequestSchema = z.object({
     mermaidCode: z.string().min(1, 'Mermaid code is required'),
     format: z.enum(['svg', 'png', 'jpg', 'pdf']).default('svg'),
@@ -9,6 +11,7 @@ export const RenderDiagramRequestSchema = z.object({
     width: z.number().optional(),
     height: z.number().optional(),
     quality: z.number().min(1).max(100).default(90).optional(),
+    output: OutputTypeEnum.default('link').optional(),
     // Essential Mermaid config options
     fontFamily: z.string().optional(),
     fontSize: z.number().optional(),
@@ -33,6 +36,7 @@ export const ConvertToImageRequestSchema = RenderDiagramRequestSchema
 
 export type RenderDiagramRequest = z.infer<typeof RenderDiagramRequestSchema>
 export type ConvertToImageRequest = z.infer<typeof ConvertToImageRequestSchema>
+export type OutputType = z.infer<typeof OutputTypeEnum>
 
 export interface DiagramResult {
     success: boolean
@@ -43,4 +47,5 @@ export interface DiagramResult {
         width: number
         height: number
     }
+    output_type?: OutputType
 } 

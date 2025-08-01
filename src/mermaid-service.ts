@@ -1,4 +1,5 @@
 import puppeteer, { Browser, ScreenshotOptions } from 'puppeteer'
+import assert from 'assert'
 import { RenderDiagramRequest, ConvertToImageRequest, DiagramResult } from './types'
 
 export class MermaidService {
@@ -10,12 +11,20 @@ export class MermaidService {
                 headless: true,
                 args: ['--no-sandbox', '--disable-setuid-sandbox']
             })
+            assert(this.browser, 'Browser must be initialized')
         }
     }
 
     async renderDiagram(request: RenderDiagramRequest): Promise<DiagramResult> {
         try {
+            assert(request, 'Request is required')
+            assert(request.mermaidCode, 'Mermaid code is required')
+            assert(request.mermaidCode.trim().length > 0, 'Mermaid code cannot be empty')
+            assert(['svg', 'png', 'jpg', 'pdf'].includes(request.format), `Invalid format: ${request.format}`)
+            assert(['default', 'base', 'dark', 'forest', 'neutral', 'null'].includes(request.theme), `Invalid theme: ${request.theme}`)
+
             await this.initialize()
+            assert(this.browser, 'Browser must be initialized')
 
             const {
                 mermaidCode,
@@ -35,13 +44,29 @@ export class MermaidService {
                 sequence
             } = request
 
-            if (!this.browser) {
-                throw new Error('Browser not initialized')
+            if (width !== undefined) {
+                assert(width > 0, `Width must be positive, got: ${width}`)
+            }
+            
+            if (height !== undefined) {
+                assert(height > 0, `Height must be positive, got: ${height}`)
+            }
+            
+            if (quality !== undefined) {
+                assert(quality >= 1 && quality <= 100, `Quality must be between 1 and 100, got: ${quality}`)
+            }
+            
+            if (fontSize !== undefined) {
+                assert(fontSize > 0, `Font size must be positive, got: ${fontSize}`)
+            }
+            
+            if (maxTextSize !== undefined) {
+                assert(maxTextSize > 0, `Max text size must be positive, got: ${maxTextSize}`)
             }
 
             const page = await this.browser.newPage()
+            assert(page, 'Page must be created')
 
-            // Build Mermaid configuration
             const mermaidConfig = {
                 theme: theme,
                 startOnLoad: true,
@@ -55,7 +80,6 @@ export class MermaidService {
                 sequence: sequence
             }
 
-            // Create HTML with Mermaid script
             const html = `
         <!DOCTYPE html>
         <html>
@@ -82,18 +106,31 @@ export class MermaidService {
 
             await page.setContent(html)
 
-            // Wait for Mermaid to render
-            await page.waitForFunction(() => {
+            const renderResult = await page.waitForFunction(() => {
                 const diagram = document.querySelector('.mermaid svg');
-                return diagram !== null;
+                const errorElement = document.querySelector('.error-text');
+                return {
+                    hasDiagram: diagram !== null,
+                    hasError: errorElement !== null,
+                    errorText: errorElement ? errorElement.textContent : null
+                };
             }, { timeout: 10000 });
+
+            const result = await renderResult.jsonValue() as { hasDiagram: boolean; hasError: boolean; errorText: string | null };
+            assert(result, 'Render result must be returned')
+            assert(typeof result.hasDiagram === 'boolean', 'hasDiagram must be boolean')
+            assert(typeof result.hasError === 'boolean', 'hasError must be boolean')
+
+            if (result.hasError) {
+                assert(result.errorText, 'Error text must be provided when hasError is true')
+                throw new Error(`Mermaid syntax error: ${result.errorText || 'Unknown syntax error'}`);
+            }
 
             if (format === 'svg') {
                 const svgElement = await page.$('.mermaid svg');
-                if (!svgElement) {
-                    throw new Error('SVG element not found');
-                }
+                assert(svgElement, 'SVG element must be found for SVG format')
                 const svgContent = await page.evaluate((element) => element.outerHTML, svgElement);
+                assert(svgContent, 'SVG content must be generated')
                 await page.close();
 
                 return {
@@ -104,14 +141,12 @@ export class MermaidService {
             }
 
             const element = await page.$('.diagram')
-            if (!element) {
-                throw new Error('Diagram element not found')
-            }
+            assert(element, 'Diagram element must be found')
 
             const boundingBox = await element.boundingBox()
-            if (!boundingBox) {
-                throw new Error('Could not get diagram dimensions')
-            }
+            assert(boundingBox, 'Diagram bounding box must be obtained')
+            assert(boundingBox.width > 0, 'Bounding box width must be positive')
+            assert(boundingBox.height > 0, 'Bounding box height must be positive')
 
             let buffer: Uint8Array
 
@@ -134,7 +169,6 @@ export class MermaidService {
                 }
 
                 if (filePath) {
-                    // Ensure the file path has the correct extension
                     const extension = format === 'jpg' ? '.jpeg' : `.${format}`
                     const pathWithExtension = filePath.endsWith(extension) ? filePath : `${filePath}${extension}`
                     screenshotOptions.path = pathWithExtension as `${string}.png` | `${string}.jpeg` | `${string}.webp`
@@ -142,6 +176,9 @@ export class MermaidService {
 
                 buffer = await page.screenshot(screenshotOptions)
             }
+
+            assert(buffer, 'Buffer must be generated')
+            assert(buffer.length > 0, 'Buffer must not be empty')
 
             await page.close()
 
@@ -155,9 +192,11 @@ export class MermaidService {
                 }
             }
         } catch (error) {
+            assert(error, 'Error must be provided')
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
             return {
                 success: false,
-                error: error instanceof Error ? error.message : 'Unknown error occurred',
+                error: errorMessage,
                 format: request.format
             }
         }
@@ -165,7 +204,14 @@ export class MermaidService {
 
     async convertToImage(request: ConvertToImageRequest): Promise<DiagramResult> {
         try {
+            assert(request, 'Request is required')
+            assert(request.mermaidCode, 'Mermaid code is required')
+            assert(request.mermaidCode.trim().length > 0, 'Mermaid code cannot be empty')
+            assert(['svg', 'png', 'jpg', 'pdf'].includes(request.format), `Invalid format: ${request.format}`)
+            assert(['default', 'base', 'dark', 'forest', 'neutral', 'null'].includes(request.theme), `Invalid theme: ${request.theme}`)
+
             await this.initialize()
+            assert(this.browser, 'Browser must be initialized')
 
             const {
                 mermaidCode,
@@ -185,13 +231,29 @@ export class MermaidService {
                 sequence
             } = request
 
-            if (!this.browser) {
-                throw new Error('Browser not initialized')
+            if (width !== undefined) {
+                assert(width > 0, `Width must be positive, got: ${width}`)
+            }
+            
+            if (height !== undefined) {
+                assert(height > 0, `Height must be positive, got: ${height}`)
+            }
+            
+            if (quality !== undefined) {
+                assert(quality >= 1 && quality <= 100, `Quality must be between 1 and 100, got: ${quality}`)
+            }
+            
+            if (fontSize !== undefined) {
+                assert(fontSize > 0, `Font size must be positive, got: ${fontSize}`)
+            }
+            
+            if (maxTextSize !== undefined) {
+                assert(maxTextSize > 0, `Max text size must be positive, got: ${maxTextSize}`)
             }
 
             const page = await this.browser.newPage()
+            assert(page, 'Page must be created')
 
-            // Build Mermaid configuration
             const mermaidConfig = {
                 theme: theme,
                 startOnLoad: true,
@@ -205,7 +267,6 @@ export class MermaidService {
                 sequence: sequence
             }
 
-            // Create HTML with Mermaid script
             const html = `
         <!DOCTYPE html>
         <html>
@@ -232,21 +293,33 @@ export class MermaidService {
 
             await page.setContent(html)
 
-            // Wait for Mermaid to render
-            await page.waitForFunction(() => {
+            const renderResult = await page.waitForFunction(() => {
                 const diagram = document.querySelector('.mermaid svg');
-                return diagram !== null;
+                const errorElement = document.querySelector('.error-text');
+                return {
+                    hasDiagram: diagram !== null,
+                    hasError: errorElement !== null,
+                    errorText: errorElement ? errorElement.textContent : null
+                };
             }, { timeout: 10000 });
 
-            const element = await page.$('.diagram')
-            if (!element) {
-                throw new Error('Diagram element not found')
+            const result = await renderResult.jsonValue() as { hasDiagram: boolean; hasError: boolean; errorText: string | null };
+            assert(result, 'Render result must be returned')
+            assert(typeof result.hasDiagram === 'boolean', 'hasDiagram must be boolean')
+            assert(typeof result.hasError === 'boolean', 'hasError must be boolean')
+
+            if (result.hasError) {
+                assert(result.errorText, 'Error text must be provided when hasError is true')
+                throw new Error(`Mermaid syntax error: ${result.errorText || 'Unknown syntax error'}`);
             }
 
+            const element = await page.$('.diagram')
+            assert(element, 'Diagram element must be found')
+
             const boundingBox = await element.boundingBox()
-            if (!boundingBox) {
-                throw new Error('Could not get diagram dimensions')
-            }
+            assert(boundingBox, 'Diagram bounding box must be obtained')
+            assert(boundingBox.width > 0, 'Bounding box width must be positive')
+            assert(boundingBox.height > 0, 'Bounding box height must be positive')
 
             let buffer: Uint8Array
 
@@ -269,7 +342,6 @@ export class MermaidService {
                 }
 
                 if (filePath) {
-                    // Ensure the file path has the correct extension
                     const extension = format === 'jpg' ? '.jpeg' : `.${format}`
                     const pathWithExtension = filePath.endsWith(extension) ? filePath : `${filePath}${extension}`
                     screenshotOptions.path = pathWithExtension as `${string}.png` | `${string}.jpeg` | `${string}.webp`
@@ -277,6 +349,9 @@ export class MermaidService {
 
                 buffer = await page.screenshot(screenshotOptions)
             }
+
+            assert(buffer, 'Buffer must be generated')
+            assert(buffer.length > 0, 'Buffer must not be empty')
 
             await page.close()
 
@@ -290,9 +365,11 @@ export class MermaidService {
                 }
             }
         } catch (error) {
+            assert(error, 'Error must be provided')
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
             return {
                 success: false,
-                error: error instanceof Error ? error.message : 'Unknown error occurred',
+                error: errorMessage,
                 format: request.format
             }
         }
