@@ -1,6 +1,6 @@
 {
   "name": "diagram-mcp",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "MCP server for rendering Mermaid diagrams and converting to images",
   "main": "dist/index.js",
   "bin": {
