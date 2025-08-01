@@ -1,4 +1,3 @@
-import mermaid from 'mermaid'
 import puppeteer, { Browser, ScreenshotOptions } from 'puppeteer'
 import { RenderDiagramRequest, ConvertToImageRequest, DiagramResult } from './types'
 
@@ -8,7 +7,7 @@ export class MermaidService {
     async initialize() {
         if (!this.browser) {
             this.browser = await puppeteer.launch({
-                headless: 'new',
+                headless: true,
                 args: ['--no-sandbox', '--disable-setuid-sandbox']
             })
         }
@@ -89,7 +88,7 @@ export class MermaidService {
                 throw new Error('Could not get diagram dimensions')
             }
 
-            let buffer: Buffer
+            let buffer: Uint8Array
 
             if (format === 'pdf') {
                 buffer = await page.pdf({
@@ -98,7 +97,6 @@ export class MermaidService {
                 })
             } else {
                 const screenshotOptions: ScreenshotOptions = {
-                    path: filePath,
                     type: format === 'jpg' ? 'jpeg' : 'png',
                     quality: format === 'jpg' ? (quality || 90) : undefined,
                     fullPage: false,
@@ -109,6 +107,14 @@ export class MermaidService {
                         height: height || boundingBox.height
                     }
                 }
+
+                if (filePath) {
+                    // Ensure the file path has the correct extension
+                    const extension = format === 'jpg' ? '.jpeg' : `.${format}`
+                    const pathWithExtension = filePath.endsWith(extension) ? filePath : `${filePath}${extension}`
+                    screenshotOptions.path = pathWithExtension as `${string}.png` | `${string}.jpeg` | `${string}.webp`
+                }
+
                 buffer = await page.screenshot(screenshotOptions)
             }
 
@@ -116,7 +122,7 @@ export class MermaidService {
 
             return {
                 success: true,
-                data: buffer.toString('base64'),
+                data: Buffer.from(buffer).toString('base64'),
                 format: format,
                 size: {
                     width: width || boundingBox.width,
@@ -192,7 +198,7 @@ export class MermaidService {
                 throw new Error('Could not get diagram dimensions')
             }
 
-            let buffer: Buffer
+            let buffer: Uint8Array
 
             if (format === 'pdf') {
                 buffer = await page.pdf({
@@ -201,7 +207,6 @@ export class MermaidService {
                 })
             } else {
                 const screenshotOptions: ScreenshotOptions = {
-                    path: filePath,
                     type: format === 'jpg' ? 'jpeg' : 'png',
                     quality: quality,
                     fullPage: false,
@@ -212,6 +217,14 @@ export class MermaidService {
                         height: height || boundingBox.height
                     }
                 }
+
+                if (filePath) {
+                    // Ensure the file path has the correct extension
+                    const extension = format === 'jpg' ? '.jpeg' : `.${format}`
+                    const pathWithExtension = filePath.endsWith(extension) ? filePath : `${filePath}${extension}`
+                    screenshotOptions.path = pathWithExtension as `${string}.png` | `${string}.jpeg` | `${string}.webp`
+                }
+
                 buffer = await page.screenshot(screenshotOptions)
             }
 
@@ -219,7 +232,7 @@ export class MermaidService {
 
             return {
                 success: true,
-                data: buffer.toString('base64'),
+                data: Buffer.from(buffer).toString('base64'),
                 format: format,
                 size: {
                     width: width || boundingBox.width,

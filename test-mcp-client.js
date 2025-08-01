@@ -3,6 +3,7 @@ import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js'
 import { writeFileSync } from 'fs'
 import { join } from 'path'
 import fs from 'fs/promises'
+import assert from 'assert'
 
 async function testMermaidMCP() {
     console.log('🚀 Starting MCP Client Test for Mermaid Diagram Rendering...\n')
@@ -63,7 +64,8 @@ graph TD
         })
 
         console.log('✅ Render result received!')
-        console.log('Result format:', renderResult.content[0].text ? 'Success' : 'Error')
+        const result = JSON.parse(renderResult.content[0].text)
+        assert(result.success, 'Render result failed ' + result.error)
 
         // Save the rendered image
         if (renderResult.content[0].text) {
@@ -74,7 +76,7 @@ graph TD
                     console.log('✅ Image saved successfully!')
                 } catch (error) {
                     console.log('❌ Image not saved!')
-                    throw new Error('Image not saved!')
+                    assert(false, 'Image not saved!')
                 }
             }
         }
@@ -99,6 +101,7 @@ graph TD
         if (convertResult.content[0].text) {
             const resultData = JSON.parse(convertResult.content[0].text)
             if (resultData.success && resultData.data) {
+
                 const imageBuffer = Buffer.from(resultData.data, 'base64')
                 const imagePath = join(process.cwd(), 'test-diagram-converted.jpg')
 
