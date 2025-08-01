@@ -1,7 +1,6 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { renderDiagramTool } from './tools/render-diagram.js'
-import { convertToImageTool } from './tools/convert-to-image.js'
 
 async function main() {
     const server = new McpServer({
@@ -34,39 +33,6 @@ async function main() {
                                 success: false,
                                 error: error instanceof Error ? error.message : 'Unknown error',
                                 format: params.format || 'svg'
-                            }, null, 2),
-                        },
-                    ],
-                }
-            }
-        }
-    )
-
-    server.tool(
-        convertToImageTool.name,
-        convertToImageTool.description,
-        convertToImageTool.inputSchema.shape,
-        { title: 'Convert to Image' },
-        async (params) => {
-            try {
-                const result = await convertToImageTool.execute(params)
-                return {
-                    content: [
-                        {
-                            type: 'text',
-                            text: JSON.stringify(result, null, 2),
-                        },
-                    ],
-                }
-            } catch (error) {
-                return {
-                    content: [
-                        {
-                            type: 'text',
-                            text: JSON.stringify({
-                                success: false,
-                                error: error instanceof Error ? error.message : 'Unknown error',
-                                format: params.format || 'png'
                             }, null, 2),
                         },
                     ],

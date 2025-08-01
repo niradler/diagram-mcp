@@ -1,7 +1,8 @@
 import { Client } from '@modelcontextprotocol/sdk/client/index.js'
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js'
-import { writeFileSync, unlinkSync } from 'fs'
+import { writeFileSync } from 'fs'
 import { join } from 'path'
+import fs from 'fs/promises'
 
 async function testMermaidMCP() {
     console.log('🚀 Starting MCP Client Test for Mermaid Diagram Rendering...\n')
@@ -48,15 +49,16 @@ graph TD
         console.log('Mermaid code:')
         console.log(mermaidDiagram)
 
-        // Test render_diagram tool
-        console.log('\n🎨 Testing render_diagram tool...')
+        // Test render_diagram tool with PNG
+        console.log('\n🎨 Testing render_diagram tool (PNG)...')
         const renderResult = await client.callTool({
             name: 'render_diagram',
             arguments: {
                 mermaidCode: mermaidDiagram,
                 format: 'png',
                 theme: 'dark',
-                backgroundColor: '#1a1a1a'
+                backgroundColor: '#1a1a1a',
+                filePath: join(process.cwd(), 'test-diagram.png')
             }
         })
 
@@ -67,28 +69,20 @@ graph TD
         if (renderResult.content[0].text) {
             const resultData = JSON.parse(renderResult.content[0].text)
             if (resultData.success && resultData.data) {
-                const imageBuffer = Buffer.from(resultData.data, 'base64')
-                const imagePath = join(process.cwd(), 'test-diagram.png')
-
-                console.log('💾 Saving image to:', imagePath)
-                writeFileSync(imagePath, imageBuffer)
-                console.log('✅ Image saved successfully!')
-
-                // Comment out the cleanup for now so you can see the image
-                // console.log('🧹 Cleaning up image...')
-                // unlinkSync(imagePath)
-                // console.log('✅ Image cleaned up!')
-
-                console.log('\n📝 To clean up the image later, uncomment these lines:')
-                console.log('// unlinkSync(imagePath)')
-                console.log('// console.log("✅ Image cleaned up!")')
+                try {
+                    await fs.access(join(process.cwd(), 'test-diagram.png'))
+                    console.log('✅ Image saved successfully!')
+                } catch (error) {
+                    console.log('❌ Image not saved!')
+                    throw new Error('Image not saved!')
+                }
             }
         }
 
-        // Test convert_to_image tool
-        console.log('\n🖼️ Testing convert_to_image tool...')
+        // Test render_diagram tool with JPG and quality
+        console.log('\n🖼️ Testing render_diagram tool (JPG with quality)...')
         const convertResult = await client.callTool({
-            name: 'convert_to_image',
+            name: 'render_diagram',
             arguments: {
                 mermaidCode: mermaidDiagram,
                 format: 'jpg',
@@ -111,15 +105,6 @@ graph TD
                 console.log('💾 Saving converted image to:', imagePath)
                 writeFileSync(imagePath, imageBuffer)
                 console.log('✅ Converted image saved successfully!')
-
-                // Comment out the cleanup for now so you can see the image
-                // console.log('🧹 Cleaning up converted image...')
-                // unlinkSync(imagePath)
-                // console.log('✅ Converted image cleaned up!')
-
-                console.log('\n📝 To clean up the converted image later, uncomment these lines:')
-                console.log('// unlinkSync(imagePath)')
-                console.log('// console.log("✅ Converted image cleaned up!")')
             }
         }
 
@@ -143,22 +128,13 @@ graph TD
                 console.log('💾 Saving SVG to:', svgPath)
                 writeFileSync(svgPath, resultData.data)
                 console.log('✅ SVG saved successfully!')
-
-                // Comment out the cleanup for now so you can see the SVG
-                // console.log('🧹 Cleaning up SVG...')
-                // unlinkSync(svgPath)
-                // console.log('✅ SVG cleaned up!')
-
-                console.log('\n📝 To clean up the SVG later, uncomment these lines:')
-                console.log('// unlinkSync(svgPath)')
-                console.log('// console.log("✅ SVG cleaned up!")')
             }
         }
 
         console.log('\n🎉 All tests completed successfully!')
         console.log('\n📁 Generated files:')
         console.log('- test-diagram.png (PNG from render_diagram)')
-        console.log('- test-diagram-converted.jpg (JPG from convert_to_image)')
+        console.log('- test-diagram-converted.jpg (JPG from render_diagram with quality)')
         console.log('- test-diagram.svg (SVG from render_diagram)')
 
     } catch (error) {

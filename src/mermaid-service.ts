@@ -18,7 +18,7 @@ export class MermaidService {
         try {
             await this.initialize()
 
-            const { mermaidCode, format, theme, backgroundColor, width, height } = request
+            const { mermaidCode, format, theme, backgroundColor, width, height, quality, filePath } = request
 
             if (!this.browser) {
                 throw new Error('Browser not initialized')
@@ -32,7 +32,7 @@ export class MermaidService {
         <html>
         <head>
           <meta charset="utf-8">
-          <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+          <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
           <style>
             body { margin: 0; padding: 20px; background: ${backgroundColor || '#ffffff'}; }
             .diagram { display: flex; justify-content: center; align-items: center; }
@@ -98,7 +98,9 @@ export class MermaidService {
                 })
             } else {
                 const screenshotOptions: ScreenshotOptions = {
-                    type: 'png',
+                    path: filePath,
+                    type: format === 'jpg' ? 'jpeg' : 'png',
+                    quality: format === 'jpg' ? (quality || 90) : undefined,
                     fullPage: false,
                     clip: {
                         x: boundingBox.x,
@@ -134,7 +136,7 @@ export class MermaidService {
         try {
             await this.initialize()
 
-            const { mermaidCode, format, theme, backgroundColor, width, height, quality } = request
+            const { mermaidCode, format, theme, backgroundColor, width, height, quality, filePath } = request
 
             if (!this.browser) {
                 throw new Error('Browser not initialized')
@@ -199,6 +201,7 @@ export class MermaidService {
                 })
             } else {
                 const screenshotOptions: ScreenshotOptions = {
+                    path: filePath,
                     type: format === 'jpg' ? 'jpeg' : 'png',
                     quality: quality,
                     fullPage: false,
