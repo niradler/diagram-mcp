@@ -1,0 +1,47 @@
+# Source files
+src/
+tests/
+test-mcp-client.js
+
+# Development files
+tsconfig.json
+vitest.config.ts
+config.json
+
+# Temporary and build artifacts
+temp-images/
+logs/
+*.png
+*.jpg
+*.svg
+*.pdf
+
+# Development dependencies
+node_modules/
+
+# Git files
+.git/
+.gitignore
+
+# Environment files
+.env
+.env.*
+
+# IDE files
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# Lock files (keep pnpm-lock.yaml for users)
+package-lock.json
+yarn.lock
+
+# TypeScript build info
+*.tsbuildinfo 
