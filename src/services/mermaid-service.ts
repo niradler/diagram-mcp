@@ -1,6 +1,6 @@
 import puppeteer, { Browser, ScreenshotOptions } from 'puppeteer'
 import assert from 'assert'
-import { RenderDiagramRequest, ConvertToImageRequest, DiagramResult } from './types'
+import { RenderDiagramRequest, ConvertToImageRequest, DiagramResult } from '../types'
 
 export class MermaidService {
     private browser: Browser | null = null
@@ -47,19 +47,19 @@ export class MermaidService {
             if (width !== undefined) {
                 assert(width > 0, `Width must be positive, got: ${width}`)
             }
-            
+
             if (height !== undefined) {
                 assert(height > 0, `Height must be positive, got: ${height}`)
             }
-            
+
             if (quality !== undefined) {
                 assert(quality >= 1 && quality <= 100, `Quality must be between 1 and 100, got: ${quality}`)
             }
-            
+
             if (fontSize !== undefined) {
                 assert(fontSize > 0, `Font size must be positive, got: ${fontSize}`)
             }
-            
+
             if (maxTextSize !== undefined) {
                 assert(maxTextSize > 0, `Max text size must be positive, got: ${maxTextSize}`)
             }
@@ -234,19 +234,19 @@ export class MermaidService {
             if (width !== undefined) {
                 assert(width > 0, `Width must be positive, got: ${width}`)
             }
-            
+
             if (height !== undefined) {
                 assert(height > 0, `Height must be positive, got: ${height}`)
             }
-            
+
             if (quality !== undefined) {
                 assert(quality >= 1 && quality <= 100, `Quality must be between 1 and 100, got: ${quality}`)
             }
-            
+
             if (fontSize !== undefined) {
                 assert(fontSize > 0, `Font size must be positive, got: ${fontSize}`)
             }
-            
+
             if (maxTextSize !== undefined) {
                 assert(maxTextSize > 0, `Max text size must be positive, got: ${maxTextSize}`)
             }

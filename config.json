@@ -1,0 +1,19 @@
+{
+    "mcpServers": {
+        "diagram-mcp-stdio": {
+            "command": "node",
+            "args": [
+                "dist/index.js"
+            ],
+            "env": {}
+        },
+        "diagram-mcp": {
+            "command": "npx",
+            "args": [
+                "-y",
+                "mcp-remote",
+                "http://localhost:8098/mcp"
+            ]
+        }
+    }
+}

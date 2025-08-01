@@ -2,7 +2,8 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js'
 import express from 'express'
-import { renderDiagramTool } from './tools/render-diagram.js'
+import { renderMermaidTool } from './tools/render-diagram.js'
+import { renderPlotlyTool } from './tools/render-plotly.js'
 import { config, logger } from './config.js'
 import { FileManager } from './utils/file-manager.js'
 
@@ -13,13 +14,46 @@ async function createMcpServer() {
     })
 
     server.tool(
-        renderDiagramTool.name,
-        renderDiagramTool.description,
-        renderDiagramTool.inputSchema.shape,
-        { title: 'Render Diagram' },
+        renderMermaidTool.name,
+        renderMermaidTool.description,
+        renderMermaidTool.inputSchema.shape,
+        { title: 'Render Mermaid Diagram' },
         async (params) => {
             try {
-                const result = await renderDiagramTool.execute(params)
+                const result = await renderMermaidTool.execute(params)
+                return {
+                    content: [
+                        {
+                            type: 'text',
+                            text: JSON.stringify(result, null, 2),
+                        },
+                    ],
+                }
+            } catch (error) {
+                return {
+                    content: [
+                        {
+                            type: 'text',
+                            text: JSON.stringify({
+                                success: false,
+                                error: error instanceof Error ? error.message : 'Unknown error',
+                                format: params.format || 'svg'
+                            }, null, 2),
+                        },
+                    ],
+                }
+            }
+        }
+    )
+
+    server.tool(
+        renderPlotlyTool.name,
+        renderPlotlyTool.description,
+        renderPlotlyTool.inputSchema.shape,
+        { title: 'Render Plotly Chart' },
+        async (params) => {
+            try {
+                const result = await renderPlotlyTool.execute(params)
                 return {
                     content: [
                         {
@@ -114,7 +148,8 @@ async function startHttpServer(transportType: 'http' | 'stdio') {
             version: '1.0.0',
             description: 'Diagram MCP server',
             tools: [
-                renderDiagramTool.name
+                renderMermaidTool.name,
+                renderPlotlyTool.name
             ],
             staticDir: config.staticDir,
             allowedDirs: config.allowedDirs,

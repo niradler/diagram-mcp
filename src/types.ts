@@ -2,7 +2,8 @@ import { z } from 'zod'
 
 const OutputTypeEnum = z.enum(['link', 'filepath', 'raw'])
 
-export const RenderDiagramRequestSchema = z.object({
+// Mermaid specific schema
+export const RenderMermaidRequestSchema = z.object({
     mermaidCode: z.string().min(1, 'Mermaid code is required'),
     format: z.enum(['svg', 'png', 'jpg', 'pdf']).default('svg'),
     theme: z.enum(['default', 'base', 'dark', 'forest', 'neutral', 'null']).default('default'),
@@ -12,7 +13,6 @@ export const RenderDiagramRequestSchema = z.object({
     height: z.number().optional(),
     quality: z.number().min(1).max(100).default(90).optional(),
     output: OutputTypeEnum.default('link').optional(),
-    // Essential Mermaid config options
     fontFamily: z.string().optional(),
     fontSize: z.number().optional(),
     darkMode: z.boolean().optional(),
@@ -31,9 +31,28 @@ export const RenderDiagramRequestSchema = z.object({
     }).optional(),
 })
 
-// Keep the old schema for backward compatibility if needed
-export const ConvertToImageRequestSchema = RenderDiagramRequestSchema
+// Plotly specific schema
+export const RenderPlotlyRequestSchema = z.object({
+    plotlyCode: z.string().min(1, 'Plotly code is required'),
+    format: z.enum(['svg', 'png', 'jpg', 'pdf']).default('svg'),
+    backgroundColor: z.string().optional(),
+    filePath: z.string().optional(),
+    width: z.number().optional(),
+    height: z.number().optional(),
+    quality: z.number().min(1).max(100).default(90).optional(),
+    output: OutputTypeEnum.default('link').optional(),
+    responsive: z.boolean().optional(),
+    displayModeBar: z.boolean().optional(),
+    modeBarButtonsToRemove: z.array(z.string()).optional(),
+    displaylogo: z.boolean().optional(),
+})
 
+// Keep the old schema for backward compatibility
+export const RenderDiagramRequestSchema = RenderMermaidRequestSchema
+export const ConvertToImageRequestSchema = RenderMermaidRequestSchema
+
+export type RenderMermaidRequest = z.infer<typeof RenderMermaidRequestSchema>
+export type RenderPlotlyRequest = z.infer<typeof RenderPlotlyRequestSchema>
 export type RenderDiagramRequest = z.infer<typeof RenderDiagramRequestSchema>
 export type ConvertToImageRequest = z.infer<typeof ConvertToImageRequestSchema>
 export type OutputType = z.infer<typeof OutputTypeEnum>

@@ -1,12 +1,13 @@
 # Diagram MCP Server
 
-A Model Context Protocol (MCP) server that renders Mermaid diagrams and converts them to various image formats.
+A Model Context Protocol (MCP) server that renders Mermaid diagrams and Plotly charts, converting them to various image formats.
 
 ## Features
 
 - **Mermaid Diagram Rendering**: Convert Mermaid code to SVG, PNG, or PDF
-- **Image Conversion**: Convert diagrams to PNG, JPG, or PDF with customizable quality
-- **Multiple Themes**: Support for default, dark, and forest themes
+- **Plotly Chart Rendering**: Convert Plotly charts to SVG, PNG, or PDF
+- **Image Conversion**: Convert diagrams and charts to PNG, JPG, or PDF with customizable quality
+- **Multiple Themes**: Support for default, dark, and forest themes (Mermaid)
 - **Customizable Output**: Control dimensions, background colors, and quality settings
 - **TypeScript**: Fully typed with Zod validation
 
@@ -36,7 +37,7 @@ pnpm run test:coverage
 
 ### Available Tools
 
-#### 1. `render_diagram`
+#### 1. `render_mermaid`
 
 Renders a Mermaid diagram to SVG, PNG, or PDF format.
 
@@ -59,7 +60,33 @@ Renders a Mermaid diagram to SVG, PNG, or PDF format.
 }
 ```
 
-#### 2. `convert_to_image`
+#### 2. `render_plotly`
+
+Renders a Plotly chart to SVG, PNG, or PDF format.
+
+**Parameters:**
+
+- `plotlyCode` (string, required): The Plotly chart code (JavaScript)
+- `format` (string, optional): Output format - 'svg', 'png', or 'pdf' (default: 'svg')
+- `backgroundColor` (string, optional): Background color (default: '#ffffff')
+- `width` (number, optional): Custom width in pixels
+- `height` (number, optional): Custom height in pixels
+- `responsive` (boolean, optional): Make chart responsive (default: true)
+- `displayModeBar` (boolean, optional): Show mode bar (default: false)
+- `displaylogo` (boolean, optional): Show Plotly logo (default: false)
+
+**Example:**
+
+```json
+{
+  "plotlyCode": "Plotly.newPlot('plotly-chart', [{ x: [1,2,3], y: [1,2,4], type: 'scatter' }], { margin: { t: 0 } });",
+  "format": "png",
+  "width": 800,
+  "height": 600
+}
+```
+
+#### 3. `convert_to_image`
 
 Converts a Mermaid diagram to PNG, JPG, or PDF image format.
 
@@ -100,7 +127,9 @@ Add this to your MCP client configuration:
 }
 ```
 
-## Supported Diagram Types
+## Supported Chart Types
+
+### Mermaid Diagrams
 
 The server supports all Mermaid diagram types:
 
@@ -116,9 +145,25 @@ The server supports all Mermaid diagram types:
 - C4 diagrams
 - Mindmaps
 
+### Plotly Charts
+
+The server supports all Plotly chart types:
+
+- Scatter plots
+- Line charts
+- Bar charts
+- Histograms
+- Box plots
+- Violin plots
+- Heatmaps
+- 3D plots
+- Contour plots
+- Surface plots
+- And many more...
+
 ## Examples
 
-### Flowchart
+### Mermaid Flowchart
 
 ```mermaid
 graph TD
@@ -128,7 +173,7 @@ graph TD
   D --> B
 ```
 
-### Sequence Diagram
+### Mermaid Sequence Diagram
 
 ```mermaid
 sequenceDiagram
@@ -142,6 +187,27 @@ sequenceDiagram
   John-->>Alice: Great!
   John->>Bob: How about you?
   Bob-->>John: Jolly good!
+```
+
+### Plotly Scatter Plot
+
+```javascript
+Plotly.newPlot(
+  "plotly-chart",
+  [
+    {
+      x: [1, 2, 3, 4, 5],
+      y: [1, 2, 4, 8, 16],
+      type: "scatter",
+      mode: "lines+markers",
+    },
+  ],
+  {
+    title: "Exponential Growth",
+    xaxis: { title: "X" },
+    yaxis: { title: "Y" },
+  }
+);
 ```
 
 ## Error Handling
