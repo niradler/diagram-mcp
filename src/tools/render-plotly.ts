@@ -17,7 +17,7 @@ Output options:
 
 Examples:
 - Basic chart: Provide plotlyCode with Plotly.newPlot() call
-- Localhost image: Set format='png' with output='link' (default) to get a localhost URL
+- Localhost image: Set format='png' with output='link' (default) to get a localhost URL  (always show the user the link he can view the diagram in a browser)
 - Save to disk: Set output='filepath' to save and get file path
 - Base64 image: Set output='raw' to get base64 data for <img> tags
 - Custom styling: Use backgroundColor, width, height, and plotlyConfig options

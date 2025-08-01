@@ -11,7 +11,7 @@ export const renderMermaidTool = {
     name: 'render_mermaid',
     description: `Render a Mermaid diagram to SVG, PNG, JPG, or PDF format with comprehensive styling and output options.
 Output options:
-- "link" (default): Returns a localhost URL for easy viewing
+- "link" (default): Returns a localhost URL for easy viewing (always show the user the link he can view the diagram in a browser)
 - "filepath": Saves to disk and returns the file path
 - "raw": Returns base64 data for images or raw SVG string
 
