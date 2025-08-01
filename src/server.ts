@@ -218,7 +218,16 @@ async function main() {
     if (config.transportType === 'http') {
         await startHttpServer(config.transportType)
     } else {
-        await startHttpServer('stdio')
+        const httpServerPromise = startHttpServer('stdio').catch(error => {
+            logger.error(error, '[MCP Diagram Server] error')
+            return null
+        })
+
+        await Promise.race([
+            httpServerPromise,
+            new Promise(resolve => setTimeout(resolve, 1000))
+        ])
+
         await startStdioServer()
     }
 }
