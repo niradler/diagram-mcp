@@ -61,6 +61,10 @@ export class PlotlyService {
                 displaylogo: displaylogo !== undefined ? displaylogo : false
             }
 
+            if (!plotlyCode.includes("plotly-chart")) {
+                throw new Error("Plotly must contain id 'plotly-chart'")
+            }
+
             const html = `
         <!DOCTYPE html>
         <html>
