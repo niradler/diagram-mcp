@@ -17,13 +17,43 @@ export class MermaidService {
         try {
             await this.initialize()
 
-            const { mermaidCode, format, theme, backgroundColor, width, height, quality, filePath } = request
+            const {
+                mermaidCode,
+                format,
+                theme,
+                backgroundColor,
+                width,
+                height,
+                quality,
+                filePath,
+                fontFamily,
+                fontSize,
+                darkMode,
+                htmlLabels,
+                maxTextSize,
+                flowchart,
+                sequence
+            } = request
 
             if (!this.browser) {
                 throw new Error('Browser not initialized')
             }
 
             const page = await this.browser.newPage()
+
+            // Build Mermaid configuration
+            const mermaidConfig = {
+                theme: theme,
+                startOnLoad: true,
+                securityLevel: 'loose',
+                fontFamily: fontFamily || 'Arial, sans-serif',
+                fontSize: fontSize,
+                darkMode: darkMode,
+                htmlLabels: htmlLabels,
+                maxTextSize: maxTextSize,
+                flowchart: flowchart,
+                sequence: sequence
+            }
 
             // Create HTML with Mermaid script
             const html = `
@@ -44,12 +74,7 @@ export class MermaidService {
             </div>
           </div>
           <script>
-            mermaid.initialize({
-              theme: '${theme}',
-              startOnLoad: true,
-              securityLevel: 'loose',
-              fontFamily: 'Arial, sans-serif'
-            });
+            mermaid.initialize(${JSON.stringify(mermaidConfig)});
           </script>
         </body>
         </html>
@@ -142,7 +167,23 @@ export class MermaidService {
         try {
             await this.initialize()
 
-            const { mermaidCode, format, theme, backgroundColor, width, height, quality, filePath } = request
+            const {
+                mermaidCode,
+                format,
+                theme,
+                backgroundColor,
+                width,
+                height,
+                quality,
+                filePath,
+                fontFamily,
+                fontSize,
+                darkMode,
+                htmlLabels,
+                maxTextSize,
+                flowchart,
+                sequence
+            } = request
 
             if (!this.browser) {
                 throw new Error('Browser not initialized')
@@ -150,13 +191,27 @@ export class MermaidService {
 
             const page = await this.browser.newPage()
 
+            // Build Mermaid configuration
+            const mermaidConfig = {
+                theme: theme,
+                startOnLoad: true,
+                securityLevel: 'loose',
+                fontFamily: fontFamily || 'Arial, sans-serif',
+                fontSize: fontSize,
+                darkMode: darkMode,
+                htmlLabels: htmlLabels,
+                maxTextSize: maxTextSize,
+                flowchart: flowchart,
+                sequence: sequence
+            }
+
             // Create HTML with Mermaid script
             const html = `
         <!DOCTYPE html>
         <html>
         <head>
           <meta charset="utf-8">
-          <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+          <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
           <style>
             body { margin: 0; padding: 20px; background: ${backgroundColor || '#ffffff'}; }
             .diagram { display: flex; justify-content: center; align-items: center; }
@@ -169,12 +224,7 @@ export class MermaidService {
             </div>
           </div>
           <script>
-            mermaid.initialize({
-              theme: '${theme}',
-              startOnLoad: true,
-              securityLevel: 'loose',
-              fontFamily: 'Arial, sans-serif'
-            });
+            mermaid.initialize(${JSON.stringify(mermaidConfig)});
           </script>
         </body>
         </html>

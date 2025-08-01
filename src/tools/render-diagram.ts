@@ -9,16 +9,7 @@ const mermaidService = new MermaidService()
 export const renderDiagramTool = {
     name: 'render_diagram',
     description: 'Render a Mermaid diagram to SVG, PNG, JPG, or PDF format with quality control for image formats',
-    inputSchema: z.object({
-        mermaidCode: z.string().min(1, 'Mermaid code is required'),
-        format: z.enum(['svg', 'png', 'jpg', 'pdf']).default('svg'),
-        theme: z.enum(['default', 'dark', 'forest']).default('default'),
-        backgroundColor: z.string().optional(),
-        filePath: z.string().optional(),
-        width: z.number().optional(),
-        height: z.number().optional(),
-        quality: z.number().min(1).max(100).default(90).optional(),
-    }),
+    inputSchema: RenderDiagramRequestSchema,
     execute: async (params: z.infer<typeof RenderDiagramRequestSchema> & { quality?: number }) => {
         try {
             const result = await mermaidService.renderDiagram(params)
